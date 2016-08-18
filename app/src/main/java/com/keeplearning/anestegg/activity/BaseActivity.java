@@ -10,4 +10,8 @@ public class BaseActivity extends Activity {
         super.onCreate(savedInstanceState);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
 }
