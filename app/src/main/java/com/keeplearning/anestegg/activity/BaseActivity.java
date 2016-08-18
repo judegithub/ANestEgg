@@ -14,4 +14,9 @@ public class BaseActivity extends Activity {
     protected void onResume() {
         super.onResume();
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
 }
