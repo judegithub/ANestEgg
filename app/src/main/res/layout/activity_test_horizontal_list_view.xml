@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical">
+
+    <!--<com.keeplearning.anestegg.widget.HorizontalListView-->
+        <!--android:id="@+id/test_horizontal_view"-->
+        <!--tools:targetApi="ice_cream_sandwich"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:background="@android:color/holo_orange_light" />-->
+
+    <com.keeplearning.anestegg.widget.CopyOfHorizontalListView
+        android:id="@+id/test_copy_of_horizontal_view"
+        tools:targetApi="ice_cream_sandwich"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/holo_orange_light" />
+
+</LinearLayout>

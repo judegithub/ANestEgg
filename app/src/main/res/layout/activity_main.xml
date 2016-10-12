@@ -23,10 +23,16 @@
         <!--android:layout_height="match_parent"-->
         <!--/>-->
 
-    <com.keeplearning.anestegg.widget.CopyOfHorizontalListView
-        android:id="@+id/main_horizontal_view"
+    <!--<com.keeplearning.anestegg.widget.CopyOfHorizontalListView-->
+        <!--android:id="@+id/main_horizontal_view"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:background="@android:color/holo_orange_light"-->
+        <!--tools:targetApi="ice_cream_sandwich" />-->
+
+
+    <ListView
+        android:id="@+id/activity_main_list_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/holo_orange_light"
-        tools:targetApi="ice_cream_sandwich" />
+        android:layout_height="match_parent"/>
 </RelativeLayout>

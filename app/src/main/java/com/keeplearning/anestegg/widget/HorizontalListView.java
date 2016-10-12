@@ -43,6 +43,9 @@ import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.Scroller;
 
+/**
+ * only use in phone or pad, can't use in tv
+ */
 public class HorizontalListView extends AdapterView<ListAdapter> {
 
 	private final String TAG = "HorizontalListView";

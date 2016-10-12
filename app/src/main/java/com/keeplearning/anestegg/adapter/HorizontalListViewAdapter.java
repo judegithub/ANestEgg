@@ -1,8 +1,6 @@
 package com.keeplearning.anestegg.adapter;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,7 +21,7 @@ public class HorizontalListViewAdapter extends BaseAdapter {
 
 	@Override
 	public int getCount() {
-		return 20;
+		return 15;
 	}
 
 	private LayoutInflater mInflater;
@@ -74,17 +72,17 @@ public class HorizontalListViewAdapter extends BaseAdapter {
 
 		if (convertView == null) {
 			vh = new ViewHolder();
-			convertView = mInflater.inflate(R.layout.layout_item, parent, false);
+			convertView = mInflater.inflate(R.layout.item_horizontal_list_view, parent, false);
 			vh.title = (TextView) convertView.findViewById(R.id.item_text_view);
 			convertView.setTag(vh);
 		} else {
 			vh = (ViewHolder) convertView.getTag();
 		}
-		if (position % 10 == 0) {
-			vh.title.setTextColor(Color.RED);
-		} else {
-			vh.title.setTextColor(Color.BLACK);
-		}
+//		if (position % 10 == 0) {
+//			vh.title.setTextColor(Color.RED);
+//		} else {
+//			vh.title.setTextColor(Color.BLACK);
+//		}
 		vh.title.setText("第" + (position + 1) + "个");
 
 //		if (convertView == null) {

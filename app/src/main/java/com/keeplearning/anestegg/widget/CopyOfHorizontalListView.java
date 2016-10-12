@@ -10,20 +10,28 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.Scroller;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.keeplearning.anestegg.R;
 
 import java.util.LinkedList;
 import java.util.Queue;
 
+/**
+ * 修改HorizontalListView，可用于tv上，并且循环
+ */
 public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
 
     private final String TAG = "CopyOfHorizontalListView";
 
     public boolean mAlwaysOverrideTouch = true;
     private boolean mDataChanged = false;
+    private boolean mIsCycle = true;
+    private boolean mGainFocus = false;
 
     private int mLeftViewIndex = INVALID_POSITION;
     private int mRightViewIndex = 0;
@@ -60,6 +68,97 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
     private OnItemClickListener mOnItemClicked;
     private OnItemLongClickListener mOnItemLongClicked;
     private  Rect mParentRect;
+
+    private GestureDetector.OnGestureListener mOnGesture = new GestureDetector.SimpleOnGestureListener() {
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            return CopyOfHorizontalListView.this.onDown(e);
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            return CopyOfHorizontalListView.this.onFling(e1, e2, velocityX, velocityY);
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            Log.d("DBG", TAG + " onScroll() "
+                    + " before mNextX: " + mNextX
+                    + " distanceX: " + distanceX
+            );
+            synchronized (CopyOfHorizontalListView.this) {
+                mNextX += (int) distanceX;
+            }
+            Log.d("DBG", TAG + " onScroll() "
+                    + " after mNextX: " + mNextX
+            );
+            requestLayout();
+
+            return true;
+        }
+
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+            Log.d("DBG", TAG + " onSingleTapConfirmed() "
+            );
+            int childCount = getChildCount();
+            View child;
+            for (int i = 0; i < childCount; i++) {
+                child = getChildAt(i);
+                if (isEventWithinView(e, child)) {
+                    int position = mLeftViewIndex + 1 + i;
+
+                    // 这是为了循环而修改的...
+                    if (mIsCycle && position > (mAdapter.getCount() - 1)) {
+                        position = position - mAdapter.getCount();
+                    }
+
+                    if (mOnItemClicked != null) {
+                        mOnItemClicked.onItemClick(CopyOfHorizontalListView.this, child, position,
+                                mAdapter.getItemId(position));
+                    }
+                    if (mOnItemSelected != null) {
+                        mOnItemSelected.onItemSelected(CopyOfHorizontalListView.this, child, position,
+                                mAdapter.getItemId(position));
+                    }
+                    break;
+                }
+
+            }
+            return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+            int childCount = getChildCount();
+            for (int i = 0; i < childCount; i++) {
+                View child = getChildAt(i);
+                boolean eventWithinView = isEventWithinView(e, child);
+                Log.d("DBG", " onLongPress() eventWithinView: " + eventWithinView);
+                if (eventWithinView) {
+                    if (mOnItemLongClicked != null) {
+                        mOnItemLongClicked.onItemLongClick(CopyOfHorizontalListView.this, child, mLeftViewIndex + 1 + i,
+                                mAdapter.getItemId(mLeftViewIndex + 1 + i));
+                    }
+                    break;
+                }
+            }
+        }
+
+        private boolean isEventWithinView(MotionEvent e, View child) {
+            Rect viewRect = new Rect();
+            int[] childPosition = new int[2];
+            child.getLocationOnScreen(childPosition);
+            int left = childPosition[0];
+            int right = left + child.getWidth();
+            int top = childPosition[1];
+            int bottom = top + child.getHeight();
+            viewRect.set(left, top, right, bottom);
+            return viewRect.contains((int) e.getRawX(), (int) e.getRawY());
+        }
+    };
+
 
     public CopyOfHorizontalListView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -133,12 +232,15 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
         return mSelectedViewIndex;
     }
 
+    public void setCycle(boolean isCycle) {
+        mIsCycle = isCycle;
+    }
+
     @Override
     public View getSelectedView() {
         Log.d("DBG", TAG + " getSelectedView() "
                 + " mSelectedViewIndex: " + mSelectedViewIndex
         );
-        // TODO 或许不能用mSelectedViewIndex，因为view是回收利用的，保持view的数量不变的
         return getChildAt(mSelectedViewIndex);
     }
 
@@ -148,7 +250,9 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
             mAdapter.unregisterDataSetObserver(mDataObserver);
         }
         mAdapter = adapter;
-        mAdapter.registerDataSetObserver(mDataObserver);
+        if (mAdapter != null) {
+            mAdapter.registerDataSetObserver(mDataObserver);
+        }
         reset();
     }
 
@@ -207,14 +311,16 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
             );
         }
 
-        if (mNextX <= 0) {
-            mNextX = 0;
-            mScroller.forceFinished(true);
+        // 这是为了循环而修改的...
+        if (!mIsCycle) {
+            if (mNextX <= 0) {
+                mNextX = 0;
+                mScroller.forceFinished(true);
+            } else if (mNextX >= mMaxX) {
+                mNextX = mMaxX;
+                mScroller.forceFinished(true);
+            }
         }
-//        else if (mNextX >= mMaxX) {
-//            mNextX = mMaxX;
-//            mScroller.forceFinished(true);
-//        }
 
         int dx = mCurrentX - mNextX;
         Log.d("DBG", TAG + " layoutChildren()"
@@ -238,7 +344,9 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
             });
         }
 
-        setSelectState();
+        if (mGainFocus) {
+            setSelectState();
+        }
     }
 
     private void setSelectState() {
@@ -252,6 +360,15 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
         if (selectedView != null) {
             mOldSelectedView = selectedView;
             mOldSelectedView.setBackgroundResource(R.color.colorAccent);
+
+            if (mOnItemSelected != null) {
+                int position = mLeftViewIndex + 1 + mSelectedViewIndex;
+                if (position > (mAdapter.getCount() - 1)) {
+                    position = position - mAdapter.getCount();
+                }
+                mOnItemSelected.onItemSelected(CopyOfHorizontalListView.this, mOldSelectedView, position,
+                        mAdapter.getItemId(position));
+            }
         }
     }
 
@@ -299,9 +416,9 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
                 + " mRightViewIndex: " + mRightViewIndex
         );
         View child;
-//        while (rightEdge + dx < getWidth() && mRightViewIndex < mAdapter.getCount()) {
-        while (rightEdge + dx < getWidth()) {
 
+        // 这是为了循环而修改的...
+        while (mIsCycle ? (rightEdge + dx < getWidth()) : (rightEdge + dx < getWidth() && mRightViewIndex < mAdapter.getCount())) {
             if (mRightViewIndex == mAdapter.getCount()) {
                 mRightViewIndex = 0;
             }
@@ -310,17 +427,21 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
             addAndMeasureChild(child, -1);
             rightEdge += child.getMeasuredWidth();
 
-//            if (mRightViewIndex == mAdapter.getCount() - 1) {
-//                mMaxX = mCurrentX + rightEdge - getWidth();
-//            }
-            Log.d("DBG", TAG + " fillListRight() add view "
-                    + " mRightViewIndex: " + mRightViewIndex
-                    + " mCurrentX: " + mCurrentX
+            // 这是为了循环而修改的...
+            if (!mIsCycle) {
+                if (mRightViewIndex == mAdapter.getCount() - 1) {
+                    mMaxX = mCurrentX + rightEdge - getWidth();
+                }
+                Log.d("DBG", TAG + " fillListRight() add view "
+                                + " mRightViewIndex: " + mRightViewIndex
+                                + " mCurrentX: " + mCurrentX
 //                    + " mMaxX: " + mMaxX
-            );
-//            if (mMaxX < 0) {
-//                mMaxX = 0;
-//            }
+                );
+                if (mMaxX < 0) {
+                    mMaxX = 0;
+                }
+            }
+
             mRightViewIndex++;
 
             if (mRemoveRightViewTotal > 0) {
@@ -334,7 +455,12 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
                 + " mLeftViewIndex: " + mLeftViewIndex
         );
         View child;
-        while (leftEdge + dx > 0 && mLeftViewIndex >= 0) {
+        // 这是为了循环而修改的...
+        while (mIsCycle ? (leftEdge + dx > 0) : (leftEdge + dx > 0 && mLeftViewIndex >= 0)) {
+            if (mLeftViewIndex < 0) {
+                mLeftViewIndex = mAdapter.getCount() - 1;
+            }
+
             child = mAdapter.getView(mLeftViewIndex, mRemovedViewQueue.poll(), this);
             addAndMeasureChild(child, 0);
             leftEdge -= child.getMeasuredWidth();
@@ -359,6 +485,14 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
             mRemovedViewQueue.offer(child);
             removeViewInLayout(child);
             mLeftViewIndex++;
+
+            // 这是为了循环而修改的...
+            if (mIsCycle) {
+                if (mLeftViewIndex == getAdapter().getCount()) {
+                    mLeftViewIndex = 0;
+                }
+            }
+
             Log.d("DBG", TAG + " removeNonVisibleItems() remove left view mLeftViewIndex: " + mLeftViewIndex);
             child = getChildAt(0);
             mRemoveLeftViewTotal++;
@@ -369,6 +503,14 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
             mRemovedViewQueue.offer(child);
             removeViewInLayout(child);
             mRightViewIndex--;
+
+            // 这是为了循环而修改的...
+            if (mIsCycle) {
+                if (mRightViewIndex == 0) {
+                    mRightViewIndex = getAdapter().getCount();
+                }
+            }
+
             Log.d("DBG", TAG + " removeNonVisibleItems() remove right view mRightViewIndex: " + mRightViewIndex);
             child = getChildAt(getChildCount() - 1);
             mRemoveRightViewTotal++;
@@ -393,13 +535,13 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
         }
     }
 
-    public synchronized void scrollTo(int x) {
-        Log.d("DBG", TAG + " scrollTo() x: " + x
-                + " mNextX: " + mNextX
-        );
-        mScroller.startScroll(mNextX, 0, x - mNextX, 0);
-        requestLayout();
-    }
+//    public synchronized void scrollTo(int x) {
+//        Log.d("DBG", TAG + " scrollTo() x: " + x
+//                + " mNextX: " + mNextX
+//        );
+//        mScroller.startScroll(mNextX, 0, x - mNextX, 0);
+//        requestLayout();
+//    }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -418,25 +560,26 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
         }
 
         switch (keyCode) {
-            case KeyEvent.KEYCODE_DPAD_LEFT:
+            case KeyEvent.KEYCODE_DPAD_LEFT: {
 
                 keyCodeWhich = KeyEvent.KEYCODE_DPAD_LEFT;
 
+                // 这是为了循环而修改的
                 // 有时候，未到数据的第一个，但是已经mSelectedViewIndex - 1 < 0，所以需要加上
                 // mLeftViewIndex != -1这个判断，mLeftViewIndex == -1 时候，已经是数据的第一个了
-                if (mLeftViewIndex != -1 || (mSelectedViewIndex - 1) >= 0) {
-                    View childAt = getChildAt(mSelectedViewIndex - 1);
-                    boolean insideParent = isInsideParent(childAt);
+                if (mIsCycle || (mLeftViewIndex != -1 || (mSelectedViewIndex - 1) >= 0)) {
+                    View leftChildAt = getChildAt(mSelectedViewIndex - 1);
+                    boolean insideParent = isInsideParent(leftChildAt);
                     Log.d("DBG", TAG + " commonKey() left 前一个view是否在父控件内： " + insideParent);
                     if (insideParent) {
                         setSelection(mSelectedViewIndex - 1);
                         setSelectState();
                     } else {
                         synchronized (CopyOfHorizontalListView.this) {
-                            if (childAt == null) {
+                            if (leftChildAt == null) {
                                 mNextX -= getChildAt(0).getMeasuredWidth();
                             } else {
-                                mNextX -= childAt.getMeasuredWidth();
+                                mNextX -= leftChildAt.getMeasuredWidth();
                             }
                         }
                         Log.d("DBG", TAG + " commonKey() key left "
@@ -445,18 +588,19 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
                         requestLayout();
                     }
                 }
+            }
                 break;
 
-            case KeyEvent.KEYCODE_DPAD_RIGHT:
+            case KeyEvent.KEYCODE_DPAD_RIGHT: {
                 Log.d("DBG", TAG + " commonKey() KEYCODE_DPAD_RIGHT"
 //                        + " 第3个view的宽： " + getChildAt(2).getWidth()
 //                        + " 第3个view的测量宽： " + getChildAt(2).getMeasuredWidth()
 //                        + " 最后一个view的宽： " + getChildAt(getChildCount() - 1).getWidth()
-                        + " 最后一个view的测量宽： " + getChildAt(getChildCount() - 1).getMeasuredWidth()
-                        + " 最后一个view的左位置： " + getChildAt(getChildCount() - 1).getLeft()
-                        + " 最后一个view的右位置： " + getChildAt(getChildCount() - 1).getRight()
-                        + " 父控件的右边： " + getRight()
-                    );
+                                + " 最后一个view的测量宽： " + getChildAt(getChildCount() - 1).getMeasuredWidth()
+                                + " 最后一个view的左位置： " + getChildAt(getChildCount() - 1).getLeft()
+                                + " 最后一个view的右位置： " + getChildAt(getChildCount() - 1).getRight()
+                                + " 父控件的右边： " + getRight()
+                );
                 Log.d("DBG", TAG + " commonKey() KEYCODE_DPAD_RIGHT"
                         + " mSelectedViewIndex： " + mSelectedViewIndex
                         + " childCount： " + getChildCount()
@@ -464,10 +608,11 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
 
                 keyCodeWhich = KeyEvent.KEYCODE_DPAD_RIGHT;
 
+                // 这是为了循环而修改的
                 // 有时候，未到数据的最后一个，但是已经(mSelectedViewIndex + 1) >= getChildCount()，所以需要加上
                 // mRightViewIndex != mAdapter.getCount()这个判断，mRightViewIndex ＝= mAdapter.getCount() 时候，已经是数据的最后一个了
-//                if (((mSelectedViewIndex + 1) < getChildCount()) || (mRightViewIndex != mAdapter.getCount())) {
-                    View childAt = null;
+                if (mIsCycle || (((mSelectedViewIndex + 1) < getChildCount()) || (mRightViewIndex != mAdapter.getCount()))) {
+                    View childAt;
                     childAt = getChildAt(mSelectedViewIndex + 1);
                     Log.d("DBG", TAG + " commonKey() right 是否在父控件内： " + isInsideParent(childAt));
                     if (isInsideParent(childAt)) {
@@ -487,8 +632,17 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
                         requestLayout();
 
                     }
-//                }
+                }
+            }
+                break;
 
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER: {
+                LinearLayout selectedView = (LinearLayout) getSelectedView();
+                TextView childAt = (TextView) selectedView.getChildAt(0);
+                Toast.makeText(getContext(), "text: " + childAt.getText(), Toast.LENGTH_SHORT).show();
+                Log.d("DBG", "comment key text: " + childAt.getText());
+            }
                 break;
         }
 
@@ -501,14 +655,13 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
         }
 
         if (mParentRect == null) {
+            int[] parentPosition = new int[2];
+            getLocationOnScreen(parentPosition);
+
             mParentRect = new Rect();
-            mParentRect.set(getLeft(), getTop(), getRight(), getBottom());
-            Log.d("DBG", TAG + " isOutSideParent() "
-                + " parent left: " + getLeft()
-                + " parent top: " + getTop()
-                + " parent right: " + getRight()
-                + " parent bottom: " + getBottom()
-            );
+            mParentRect.set(getLeft(), parentPosition[1], getRight(), parentPosition[1] + getMeasuredHeight());
+            Log.d("DBG", TAG + " isOutSideParent() " + " parent left: " + getLeft() + " parent top: " + getTop()
+                    + " parent right: " + getRight() + " parent bottom: " + getBottom());
         }
 
         Rect viewRect = new Rect();
@@ -520,7 +673,7 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
         int bottom = top + child.getHeight();
         viewRect.set(left, top, right, bottom);
 
-//        return viewRect.contains((int) e.getRawX(), (int) e.getRawY());
+        // return viewRect.contains((int) e.getRawX(), (int) e.getRawY());
         return mParentRect.contains(viewRect);
     }
 
@@ -555,87 +708,45 @@ public class CopyOfHorizontalListView extends AdapterView<ListAdapter> {
         return true;
     }
 
-    private GestureDetector.OnGestureListener mOnGesture = new GestureDetector.SimpleOnGestureListener() {
+    @Override
+    protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+        Log.d("DBG", TAG + " onFocusChanged()... gainFocus: " + gainFocus);
+        mGainFocus = gainFocus;
+        refreshFocus(gainFocus);
+    }
 
-        @Override
-        public boolean onDown(MotionEvent e) {
-            return CopyOfHorizontalListView.this.onDown(e);
-        }
+    private void refreshFocus(boolean gainFocus) {
+        if (mOldSelectedView != null) {
+            if (gainFocus) {
+//				mOldSelectedView.setBackgroundResource(R.color.orange);
 
-        @Override
-        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            return CopyOfHorizontalListView.this.onFling(e1, e2, velocityX, velocityY);
-        }
+//                if (mCustomSelectedListener != null) {
+//                    int position = mLeftViewIndex + 1 + mSelectedViewIndex;
+//                    if (position > (mAdapter.getCount() - 1)) {
+//                        position = position - mAdapter.getCount();
+//                    }
+//                    mCustomSelectedListener.onCustomItemSelected(CustomHorizontalView.this, mOldSelectedView, position,
+//                            mAdapter.getItemId(position), true);
+//                }
+            } else {
+//				mOldSelectedView.setBackgroundResource(R.color.edit_bg);
 
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            Log.d("DBG", TAG + " onScroll() "
-                    + " before mNextX: " + mNextX
-                    + " distanceX: " + distanceX
-            );
-            synchronized (CopyOfHorizontalListView.this) {
-                mNextX += (int) distanceX;
+//                if (mCustomSelectedListener != null) {
+//                    int position = mLeftViewIndex + 1 + mSelectedViewIndex;
+//                    if (position > (mAdapter.getCount() - 1)) {
+//                        position = position - mAdapter.getCount();
+//                    }
+//                    mCustomSelectedListener.onCustomItemSelected(CustomHorizontalView.this, mOldSelectedView, position,
+//                            mAdapter.getItemId(position), false);
+//                }
             }
-            Log.d("DBG", TAG + " onScroll() "
-                    + " after mNextX: " + mNextX
-            );
-            requestLayout();
-
-            return true;
-        }
-
-        @Override
-        public boolean onSingleTapConfirmed(MotionEvent e) {
-            Log.d("DBG", TAG + " onSingleTapConfirmed() "
-            );
-            int childCount = getChildCount();
-            View child;
-            for (int i = 0; i < childCount; i++) {
-                child = getChildAt(i);
-                if (isEventWithinView(e, child)) {
-                    if (mOnItemClicked != null) {
-                        mOnItemClicked.onItemClick(CopyOfHorizontalListView.this, child, mLeftViewIndex + 1 + i,
-                                mAdapter.getItemId(mLeftViewIndex + 1 + i));
-                    }
-                    if (mOnItemSelected != null) {
-                        mOnItemSelected.onItemSelected(CopyOfHorizontalListView.this, child, mLeftViewIndex + 1 + i,
-                                mAdapter.getItemId(mLeftViewIndex + 1 + i));
-                    }
-                    break;
-                }
-
-            }
-            return true;
-        }
-
-        @Override
-        public void onLongPress(MotionEvent e) {
-            int childCount = getChildCount();
-            for (int i = 0; i < childCount; i++) {
-                View child = getChildAt(i);
-                boolean eventWithinView = isEventWithinView(e, child);
-                Log.d("DBG", " onLongPress() eventWithinView: " + eventWithinView);
-                if (eventWithinView) {
-                    if (mOnItemLongClicked != null) {
-                        mOnItemLongClicked.onItemLongClick(CopyOfHorizontalListView.this, child, mLeftViewIndex + 1 + i,
-                                mAdapter.getItemId(mLeftViewIndex + 1 + i));
-                    }
-                    break;
-                }
+        } else {
+            if (gainFocus) {
+                setSelectState();
             }
         }
+    }
 
-        private boolean isEventWithinView(MotionEvent e, View child) {
-            Rect viewRect = new Rect();
-            int[] childPosition = new int[2];
-            child.getLocationOnScreen(childPosition);
-            int left = childPosition[0];
-            int right = left + child.getWidth();
-            int top = childPosition[1];
-            int bottom = top + child.getHeight();
-            viewRect.set(left, top, right, bottom);
-            return viewRect.contains((int) e.getRawX(), (int) e.getRawY());
-        }
-    };
 
 }
