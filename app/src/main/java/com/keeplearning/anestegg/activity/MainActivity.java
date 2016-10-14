@@ -13,17 +13,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.keeplearning.anestegg.R;
-import com.keeplearning.anestegg.adapter.HorizontalListViewAdapter;
+import com.keeplearning.anestegg.widget.LikeToastView;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends BaseActivity {
 
     private final String TAG = "MainActivity";
 
-    private HorizontalListViewAdapter mHlva;
-
     private ListView mListView;
 
     private ListItemProvider mListItemProvider;
+
+    private boolean mIsReadyToFinish = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +36,7 @@ public class MainActivity extends BaseActivity {
         prepareData();
 
         setupViews();
+
     }
 
     private void prepareData() {
@@ -56,7 +60,27 @@ public class MainActivity extends BaseActivity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        Log.d("DBG", TAG + " onKeyDown() keyCode: " + keyCode);
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BACK: {
+                if (mIsReadyToFinish) {
+                    finish();
+                } else {
+                    mIsReadyToFinish = true;
+
+                    LikeToastView.makeText(this, "再按一次返回退出", LikeToastView.LENGTH_SHORT).show();
+
+                    Timer t = new Timer();
+                    t.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            mIsReadyToFinish = false;
+                        }
+                    }, 2000);
+                }
+            }
+                return  true;
+        }
+
         return super.onKeyDown(keyCode, event);
     }
 
