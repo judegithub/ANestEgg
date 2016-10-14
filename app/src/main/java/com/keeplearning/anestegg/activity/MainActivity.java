@@ -2,7 +2,6 @@ package com.keeplearning.anestegg.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -123,7 +122,9 @@ public class MainActivity extends BaseActivity {
     }
 
     class ListItemProvider {
-        private final String[] LIST_ITEM = new String[]{"HorizontalListView Test"};
+        private final String[] LIST_ITEM = new String[]{"HorizontalListView Test",
+            "CustomHorizontalListView Test"
+        };
 
         public int getCount() {
             return LIST_ITEM.length;
@@ -138,6 +139,10 @@ public class MainActivity extends BaseActivity {
             switch (position) {
                 case 0:
                     intent = new Intent(MainActivity.this, TestHorizontalListViewActivity.class);
+                    break;
+
+                case 1:
+                    intent = new Intent(MainActivity.this, TestCustomHorizontalListViewActivity.class);
                     break;
             }
 

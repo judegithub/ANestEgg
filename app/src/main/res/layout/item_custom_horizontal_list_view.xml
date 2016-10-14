@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="200dp"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.keeplearning.anestegg.widget.CustomMarqueeTextView
+        android:id="@+id/item_text_view"
+        android:layout_width="200dp"
+        android:layout_height="match_parent"
+        android:background="@android:color/holo_red_light"
+        android:ellipsize="marquee"
+        android:gravity="center"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:singleLine="true"
+        android:textColor="@android:color/black"
+        android:textSize="25sp" />
+
+</merge>

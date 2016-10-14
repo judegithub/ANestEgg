@@ -15,7 +15,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.keeplearning.anestegg.activity.TestHorizontalListViewActivity" />
+        <activity android:name=".activity.TestHorizontalListViewActivity"></activity>
+        <activity android:name=".activity.TestCustomHorizontalListViewActivity"></activity>
     </application>
 
 </manifest>
