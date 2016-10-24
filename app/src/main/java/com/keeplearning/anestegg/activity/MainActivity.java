@@ -123,7 +123,10 @@ public class MainActivity extends BaseActivity {
 
     class ListItemProvider {
         private final String[] LIST_ITEM = new String[]{"HorizontalListView Test",
-            "CustomHorizontalListView Test"
+            "CustomHorizontalListView Test",
+            "Glide Test",
+            "Scroll Text View Test",
+            "Animation Test",
         };
 
         public int getCount() {
@@ -143,6 +146,18 @@ public class MainActivity extends BaseActivity {
 
                 case 1:
                     intent = new Intent(MainActivity.this, TestCustomHorizontalListViewActivity.class);
+                    break;
+
+                case 2:
+                    intent = new Intent(MainActivity.this, TestGlideActivity.class);
+                    break;
+
+                case 3:
+                    intent = new Intent(MainActivity.this, TestScrollTextViewActivity.class);
+                    break;
+
+                case 4:
+                    intent = new Intent(MainActivity.this, TestAnimationActivity.class);
                     break;
             }
 
