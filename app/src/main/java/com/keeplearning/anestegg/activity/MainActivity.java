@@ -122,11 +122,15 @@ public class MainActivity extends BaseActivity {
     }
 
     class ListItemProvider {
-        private final String[] LIST_ITEM = new String[]{"HorizontalListView Test",
+        private final String[] LIST_ITEM = new String[]{
+            "Device Info",
+            "HorizontalListView Test",
             "CustomHorizontalListView Test",
             "Glide Test",
             "Scroll Text View Test",
             "Animation Test",
+            "Recycler View Test",
+            "Scroll View Test",
         };
 
         public int getCount() {
@@ -141,23 +145,35 @@ public class MainActivity extends BaseActivity {
             Intent intent = null;
             switch (position) {
                 case 0:
-                    intent = new Intent(MainActivity.this, TestHorizontalListViewActivity.class);
+                    intent = new Intent(MainActivity.this, DeviceInfoActivity.class);
                     break;
 
                 case 1:
-                    intent = new Intent(MainActivity.this, TestCustomHorizontalListViewActivity.class);
+                    intent = new Intent(MainActivity.this, TestHorizontalListViewActivity.class);
                     break;
 
                 case 2:
-                    intent = new Intent(MainActivity.this, TestGlideActivity.class);
+                    intent = new Intent(MainActivity.this, TestCustomHorizontalListViewActivity.class);
                     break;
 
                 case 3:
-                    intent = new Intent(MainActivity.this, TestScrollTextViewActivity.class);
+                    intent = new Intent(MainActivity.this, TestGlideActivity.class);
                     break;
 
                 case 4:
+                    intent = new Intent(MainActivity.this, TestScrollTextViewActivity.class);
+                    break;
+
+                case 5:
                     intent = new Intent(MainActivity.this, TestAnimationActivity.class);
+                    break;
+
+                case 6:
+                    intent = new Intent(MainActivity.this, TestRecyclerViewActivity.class);
+                    break;
+
+                case 7:
+                    intent = new Intent(MainActivity.this, TestScrollViewActivity.class);
                     break;
             }
 

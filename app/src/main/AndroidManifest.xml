@@ -23,7 +23,10 @@
     <uses-permission android:name="android.permission.RESTART_PACKAGES" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_DOWNLOAD_MANAGER" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -42,7 +45,10 @@
         <activity android:name=".activity.TestCustomHorizontalListViewActivity" />
         <activity android:name=".activity.TestGlideActivity" />
         <activity android:name=".activity.TestScrollTextViewActivity" />
-        <activity android:name=".activity.TestAnimationActivity"></activity>
+        <activity android:name=".activity.TestAnimationActivity" />
+        <activity android:name=".activity.TestRecyclerViewActivity" />
+        <activity android:name=".activity.TestScrollViewActivity" />
+        <activity android:name=".activity.DeviceInfoActivity"></activity>
     </application>
 
 </manifest>
